@@ -9,6 +9,7 @@ RSpec.feature "Customer checkouts" do
   before do
     shipping_method.calculator.update!(preferred_amount: 10)
     product.shipping_category = shipping_method.shipping_categories.first
+    product.master.stock_items.first.update!(backorderable: false)
     product.save!
   end
 
@@ -23,6 +24,32 @@ RSpec.feature "Customer checkouts" do
     select_payment_method
 
     expect(page).to have_content("Your order has been processed successfully")
+  end
+
+  scenario "adding item to cart reserves the item" do
+    order = create(:order, state: "cart")
+    create(:line_item, order: order, product: product, quantity: 10)
+
+    visit spree.root_path
+    click_on product.name
+    expect(page).to have_content("Out of Stock")
+
+    click_button "Add To Cart"
+
+    expect(page).to have_content("not available")
+  end
+
+  scenario "adjusting quantity in cart takes reservation into account" do
+    order = create(:order, state: "cart")
+    create(:line_item, order: order, product: product, quantity: 9)
+
+    visit spree.root_path
+    click_on product.name
+    click_button "Add To Cart"
+    fill_in line_item_quantity_field, with: "2"
+    click_button "Update"
+
+    expect(page).to have_content("not available")
   end
 
   def fill_in_guest_checkout_details
@@ -54,5 +81,9 @@ RSpec.feature "Customer checkouts" do
   def select_payment_method
     choose payment_method.name
     click_button "Save and Continue"
+  end
+
+  def line_item_quantity_field
+    find(".line-item:first .cart-item-quantity input")["id"]
   end
 end
