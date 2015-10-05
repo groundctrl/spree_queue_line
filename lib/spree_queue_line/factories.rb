@@ -1,6 +1,9 @@
-FactoryGirl.define do
-  # Define your Spree extensions Factories within this file to enable applications, and other extensions to use and override them.
-  #
-  # Example adding this to your spec_helper will load these Factories for use:
-  # require 'spree_queue_line/factories'
+FactoryGirl.modify do
+  factory :order do
+    trait :guest do
+      user nil
+      email { generate(:random_email) }
+      guest_token { SecureRandom.hex }
+    end
+  end
 end

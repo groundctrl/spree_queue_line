@@ -14,6 +14,7 @@ RSpec.describe "Expiring cart" do
 
       visit spree.cart_path
       expect(page).to have_no_content(product.name)
+      expect(page).to have_content(PendingOrderCleanupJob::WARNING_MESSAGE)
     end
   end
 

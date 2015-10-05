@@ -1,6 +1,10 @@
 require "spec_helper"
 
 RSpec.describe PendingOrderCleanupJob, type: :job do
+  before do
+    allow(SpreeNotifications).to receive(:create).and_return(true)
+  end
+
   it "clear items from order" do
     order = create(:order_with_line_items, state: "cart")
 
@@ -23,5 +27,37 @@ RSpec.describe PendingOrderCleanupJob, type: :job do
     PendingOrderCleanupJob.perform_now(order, order.updated_at.to_i)
 
     expect(order.reload.line_items).not_to be_empty
+  end
+
+  context "with guest order" do
+    it "creates a notification associated with guest_token" do
+      order = create(:order_with_line_items, :guest, state: "cart")
+
+      PendingOrderCleanupJob.perform_now(order, order.updated_at.to_i)
+
+      expect(SpreeNotifications).
+        to have_received(:create).
+          with(
+            :warn,
+            PendingOrderCleanupJob::WARNING_MESSAGE,
+            guest_token: order.guest_token
+          )
+    end
+  end
+
+  context "with registered user order" do
+    it "creates a notification associated with user" do
+      order = create(:order_with_line_items, state: "cart")
+
+      PendingOrderCleanupJob.perform_now(order, order.updated_at.to_i)
+
+      expect(SpreeNotifications).
+        to have_received(:create).
+          with(
+            :warn,
+            PendingOrderCleanupJob::WARNING_MESSAGE,
+            user: order.user
+          )
+    end
   end
 end
