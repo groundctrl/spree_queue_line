@@ -8,7 +8,7 @@ RSpec.describe PendingOrderCleanupJob, type: :job do
   it "clear items from order" do
     order = create(:order_with_line_items, state: "cart")
 
-    PendingOrderCleanupJob.perform_now(order, order.updated_at.to_i)
+    PendingOrderCleanupJob.perform_now(order, order.updated_at_token)
 
     expect(order.reload.line_items).to be_empty
   end
@@ -16,7 +16,7 @@ RSpec.describe PendingOrderCleanupJob, type: :job do
   it "does not clear items if timestamp does not match" do
     order = create(:order_with_line_items, state: "cart")
 
-    PendingOrderCleanupJob.perform_now(order, 20.minutes.ago.to_i)
+    PendingOrderCleanupJob.perform_now(order, "INVALID_TOKEN")
 
     expect(order.reload.line_items).not_to be_empty
   end
@@ -24,7 +24,7 @@ RSpec.describe PendingOrderCleanupJob, type: :job do
   it "does not clear items if order is completed" do
     order = create(:completed_order_with_totals, state: "complete")
 
-    PendingOrderCleanupJob.perform_now(order, order.updated_at.to_i)
+    PendingOrderCleanupJob.perform_now(order, order.updated_at_token)
 
     expect(order.reload.line_items).not_to be_empty
   end
@@ -33,7 +33,7 @@ RSpec.describe PendingOrderCleanupJob, type: :job do
     it "creates a notification associated with guest_token" do
       order = create(:order_with_line_items, :guest, state: "cart")
 
-      PendingOrderCleanupJob.perform_now(order, order.updated_at.to_i)
+      PendingOrderCleanupJob.perform_now(order, order.updated_at_token)
 
       expect(SpreeNotifications).
         to have_received(:create).
@@ -49,7 +49,7 @@ RSpec.describe PendingOrderCleanupJob, type: :job do
     it "creates a notification associated with user" do
       order = create(:order_with_line_items, state: "cart")
 
-      PendingOrderCleanupJob.perform_now(order, order.updated_at.to_i)
+      PendingOrderCleanupJob.perform_now(order, order.updated_at_token)
 
       expect(SpreeNotifications).
         to have_received(:create).

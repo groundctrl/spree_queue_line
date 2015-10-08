@@ -9,7 +9,7 @@ RSpec.describe Spree::Order do
 
     expect(PendingOrderCleanupJob).to have_received(:set).with(wait: 20.minutes)
     expect(job).
-      to have_received(:perform_later).with(order, order.updated_at.to_i)
+      to have_received(:perform_later).with(order, order.updated_at_token)
   end
 
   it "enqueues PendingOrderCleanupJob when order is updated" do
@@ -21,6 +21,17 @@ RSpec.describe Spree::Order do
 
     expect(PendingOrderCleanupJob).to have_received(:set).with(wait: 20.minutes)
     expect(job).
-      to have_received(:perform_later).with(order, order.updated_at.to_i)
+      to have_received(:perform_later).with(order, order.updated_at_token)
+  end
+
+  it "sets updated_at_token when the job is created or updated" do
+    order = create(:order)
+
+    expect(order.updated_at_token).not_to be_nil
+
+    previous_token = order.updated_at_token
+    order.save!
+
+    expect(order.updated_at_token).not_to eq previous_token
   end
 end

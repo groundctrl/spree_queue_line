@@ -3,8 +3,8 @@ class PendingOrderCleanupJob < ActiveJob::Base
 
   queue_as :default
 
-  def perform(order, timestamp_at_queued)
-    if order_unchanged?(order, timestamp_at_queued) && !order.completed?
+  def perform(order, verification_token)
+    if order_unchanged?(order, verification_token) && !order.completed?
       order.transaction do
         order.empty!
         SpreeNotifications.create :warn, WARNING_MESSAGE, recipient_for(order)
@@ -14,8 +14,8 @@ class PendingOrderCleanupJob < ActiveJob::Base
 
   private
 
-  def order_unchanged?(order, timestamp_at_queued)
-    order.updated_at.to_i == timestamp_at_queued
+  def order_unchanged?(order, verification_token)
+    order.updated_at_token == verification_token
   end
 
   def recipient_for(order)
