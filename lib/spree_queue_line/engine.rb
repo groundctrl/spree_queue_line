@@ -16,5 +16,7 @@ module SpreeQueueLine
     end
 
     config.to_prepare &method(:activate).to_proc
+
+    rake_tasks { load "tasks/cleanup.rake" }
   end
 end
