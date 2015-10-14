@@ -18,4 +18,14 @@ desc 'Generates a dummy app for testing'
 task :test_app do
   ENV['LIB_NAME'] = 'spree_queue_line'
   Rake::Task['extension:test_app'].invoke
+
+  # Add Active Job configuration for dummy app
+  unless File.exist?("config/initializers/active_job.rb")
+    File.open("config/initializers/active_job.rb", "w") do |file|
+      file.write "Rails.configuration.active_job.queue_adapter = :delayed_job"
+    end
+
+    sh "bin/rails", "generate", "delayed_job:active_record"
+    sh "bin/rake", "db:migrate"
+  end
 end
